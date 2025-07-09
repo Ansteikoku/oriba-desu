@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>掲示板トップ - スレッド一覧</title>
+  <link rel="stylesheet" href="themes.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+</head>
+<body>
+  <h1 id="board-name">掲示板</h1>
+  <div id="thread-list"></div>
+
+  <script>
+    const ADMIN_EMAIL = 'tianzhongxiaoji75@gmail.com';
+
+    async function applyTheme(boardSlug) {
+      const slugClass = `theme-${boardSlug}`;
+      document.body.classList.add(slugClass);
+    }
+
+    // URLパラメータから板slugを取得。なければdefault
+    function getBoardSlug() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('board') || 'default';
+    }
+
+    async function fetchBoardName(boardSlug) {
+      const { data, error } = await supabase.from('boards').select('name').eq('slug', boardSlug).single();
+      if (error || !data) {
+        document.getElementById('board-name').textContent = '掲示板';
+      } else {
+        document.getElementById('board-name').textContent = data.name;
+      }
+    }
+
+    async function fetchThreads(boardSlug) {
+      const { data, error } = await supabase.from('threads')
+        .select('id, title, created_at')
+        .eq('board_slug', boardSlug)
+        .order('created_at', { ascending: false });
+      if (error) {
+        alert('スレッド取得エラー');
+        return;
+      }
+
+      const container = document.getElementById('thread-list');
+      container.innerHTML = '';
+      if (data.length === 0) {
+        container.textContent = 'スレッドがありません';
+        return;
+      }
+
+      for (const thread of data) {
+        const div = document.createElement('div');
+        const a = document.createElement('a');
+        a.href = `thread.html?thread_id=${thread.id}&board=${boardSlug}`;
+        a.textContent = thread.title;
+        div.appendChild(a);
+        container.appendChild(div);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const boardSlug = getBoardSlug();
+      await applyTheme(boardSlug);
+      await fetchBoardName(boardSlug);
+      await fetchThreads(boardSlug);
+    });
+  </script>
+</body>
+</html>
