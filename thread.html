@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>スレッド詳細</title>
+  <link rel="stylesheet" href="themes.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+</head>
+<body>
+  <h1 id="thread-title">スレッドタイトル</h1>
+  <div id="comments"></div>
+  <button id="logout-btn">ログアウト</button>
+
+  <form id="comment-form">
+    <h2>コメント投稿</h2>
+    <label>名前（空欄時「風吹けば名無し」）</label>
+    <input type="text" id="name-input" placeholder="名無しさん" />
+    <label>コメント本文</label>
+    <textarea id="content-input" rows="4" required></textarea>
+    <label>画像（複数選択可）</label>
+    <input type="file" id="image-input" accept="image/*" multiple />
+    <button type="submit">投稿する</button>
+  </form>
+
+  <script>
+    const ADMIN_EMAIL = 'tianzhongxiaoji75@gmail.com';
+
+    function getQueryParam(param) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(param);
+    }
+
+    async function applyTheme(boardSlug) {
+      const slugClass = `theme-${boardSlug}`;
+      document.body.classList.add(slugClass);
+    }
+
+    async function isAdmin() {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session && session.user.email === ADMIN_EMAIL;
+    }
+
+    async function fetchThread(threadId) {
+      const { data, error } = await supabase.from('threads').select('title, board_slug').eq('id', threadId).single();
+      if (error) {
+        alert('スレッド取得失敗');
+        return null;
+      }
+      document.getElementById('thread-title').textContent = data.title;
+      return data.board_slug;
+    }
+
+    async function fetchComments(threadId) {
+      const { data, error } = await supabase.from('comments')
+        .select('*')
+        .eq('thread_id', threadId)
+        .order('res_number', { ascending: true });
+      if (error) {
+        alert('コメント取得失敗');
+        return [];
+      }
+      return data;
+    }
+
+    async function renderComments(comments) {
+      const container = document.getElementById('comments');
+      container.innerHTML = '';
+      const admin = await isAdmin();
+
+      for (const c of comments) {
+        const div = document.createElement('div');
+        div.className = 'comment';
+        div.textContent = `${c.res_number} ${c.name}: ${c.content}`;
+
+        if (c.image_urls) {
+          try {
+            const urls = JSON.parse(c.image_urls);
+            urls.forEach(url => {
+              const img = document.createElement('img');
+              img.src = url;
+              div.appendChild(img);
+            });
+          } catch {
+            // パース失敗は無視
+          }
+        }
+
+        if (admin) {
+          const btn = document.createElement('button');
+          btn.className = 'delete-btn';
+          btn.textContent = '削除';
+          btn.style.display = 'inline-block';
+          btn.onclick = async () => {
+            if (!confirm('コメントを削除しますか？')) return;
+            const { error } = await supabase.from('comments').delete().eq('id', c.id);
+            if (error) {
+              alert('削除失敗');
+              return;
+            }
+            alert('削除しました');
+            loadComments();
+          };
+          div.appendChild(btn);
+        }
+        container.appendChild(div);
+      }
+    }
+
+    async function loadComments() {
+      const threadId = getQueryParam('thread_id');
+      if (!threadId) {
+        alert('thread_idがありません');
+        return;
+      }
+      const comments = await fetchComments(threadId);
+      await renderComments(comments);
+    }
+
+    async function submitComment(e) {
+      e.preventDefault();
+      const threadId = getQueryParam('thread_id');
+      if (!threadId) {
+        alert('thread_idがありません');
+        return;
+      }
+
+      let name = document.getElementById('name-input').value.trim();
+      if (!name) name = '風吹けば名無し';
+
+      const content = document.getElementById('content-input').value.trim();
+      if (!content) {
+        alert('コメントを入力してください');
+        return;
+      }
+
+      const files = document.getElementById('image-input').files;
+      const imageUrls = [];
+
+      for (const file of files) {
+        const ext = file.name.split('.').pop();
+        const fileName = `${threadId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { data, error } = await supabase.storage.from('comment-images').upload(fileName, file);
+        if (error) {
+          alert('画像アップロードに失敗しました');
+          return;
+        }
+        const publicUrl = supabase.storage.from('comment-images').getPublicUrl(fileName).publicURL;
+        imageUrls.push(publicUrl);
+      }
+
+      const { data: lastComments } = await supabase.from('comments')
+        .select('res_number')
+        .eq('thread_id', threadId)
+        .order('res_number', { ascending: false })
+        .limit(1);
+
+      let nextResNumber = 1;
+      if (lastComments && lastComments.length > 0) {
+        nextResNumber = lastComments[0].res_number + 1;
+      }
+
+      const { error } = await supabase.from('comments').insert([{
+        thread_id: threadId,
+        name,
+        content,
+        res_number: nextResNumber,
+        image_urls: JSON.stringify(imageUrls),
+        created_at: new Date().toISOString()
+      }]);
+
+      if (error) {
+        alert('コメント投稿に失敗しました');
+        return;
+      }
+
+      document.getElementById('content-input').value = '';
+      document.getElementById('image-input').value = '';
+      loadComments();
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      location.reload();
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const threadId = getQueryParam('thread_id');
+      if (!threadId) {
+        alert('thread_idがありません');
+        return;
+      }
+
+      const boardSlug = await fetchThread(threadId);
+      if (boardSlug) {
+        await applyTheme(boardSlug);
+      }
+
+      document.getElementById('comment-form').addEventListener('submit', submitComment);
+
+      document.getElementById('logout-btn').addEventListener('click', logout);
+
+      const admin = await isAdmin();
+      document.getElementById('logout-btn').style.display = admin ? 'inline-block' : 'none';
+
+      loadComments();
+    });
+  </script>
+</body>
+</html>
