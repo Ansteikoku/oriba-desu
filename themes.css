@@ -1,0 +1,118 @@
+/* 共通スタイル */
+body {
+  font-family: sans-serif;
+  margin: 0; padding: 0;
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* デフォルトテーマ */
+body.theme-default {
+  background: #f0f0f0;
+  color: #333;
+}
+body.theme-default a {
+  color: #0066cc;
+}
+
+/* 緑テーマ */
+body.theme-green {
+  background: #d0f8b0;
+  color: #204000;
+  font-family: "ＭＳ Ｐゴシック", monospace;
+}
+body.theme-green a {
+  color: #38761d;
+}
+
+/* 板slug別テーマ例 */
+body.theme-live,
+body.theme-nanj-headline,
+body.theme-live-m,
+body.theme-live-v,
+body.theme-battle-live {
+  background: #d0f8b0;
+  color: #204000;
+  font-family: "ＭＳ Ｐゴシック", monospace;
+}
+body.theme-live a,
+body.theme-nanj-headline a,
+body.theme-live-m a,
+body.theme-live-v a,
+body.theme-battle-live a {
+  color: #38761d;
+}
+
+body.theme-live-headline,
+body.theme-live-g,
+body.theme-live-s,
+body.theme-live-j,
+body.theme-scene-live {
+  background: #f0f0f0;
+  color: #333;
+  font-family: sans-serif;
+}
+body.theme-live-headline a,
+body.theme-live-g a,
+body.theme-live-s a,
+body.theme-live-j a,
+body.theme-scene-live a {
+  color: #0066cc;
+}
+
+/* 投稿一覧のコメント枠 */
+.comment {
+  background: white;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #999;
+  position: relative;
+}
+
+.comment img {
+  max-width: 200px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.delete-btn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: #d9534f;
+  border: none;
+  color: white;
+  padding: 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+}
+
+#logout-btn {
+  margin-top: 20px;
+  padding: 10px;
+  background: #444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: none;
+}
+
+form {
+  background: white;
+  padding: 10px;
+  margin-top: 20px;
+  border: 1px solid #999;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+input[type="text"],
+textarea {
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+}
