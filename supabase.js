@@ -1,0 +1,5 @@
+// ここは自分のSupabase情報に書き換えてください
+const SUPABASE_URL = 'https://kdhurulrrehrkyrprufl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaHVydWxycmVocmt5cnBydWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3NzA5OTcsImV4cCI6MjA2NzM0Njk5N30.itwj_uK6GgvyhTvenoTHQSNM-ZAKhjkXI9ffqvpbWVI';
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
