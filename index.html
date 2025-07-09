@@ -2,73 +2,38 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>６ちゃんねる - 掲示板</title>
-  <link rel="stylesheet" href="style.css">
+  <title>６ちゃんねる</title>
 </head>
 <body>
   <h1 id="board-name">掲示板</h1>
-  <ul id="thread-list"></ul>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // Supabase 接続情報
-    const supabase = supabase.createClient(
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const supabase = createClient(
       'https://kdhurulrrehrkyrprufl.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaHVydWxycmVocmt5cnBydWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3NzA5OTcsImV4cCI6MjA2NzM0Njk5N30.itwj_uK6GgvyhTvenoTHQSNM-ZAKhjkXI9ffqvpbWVI'
     );
 
-    // クエリから board=slug を取得
-    function getBoardSlug() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('board') || null;
-    }
+    const params = new URLSearchParams(window.location.search);
+    const boardSlug = params.get('board');
+    console.log("URLから取得したboard:", boardSlug);
 
-    // 板名を取得して表示
     async function fetchBoardName(slug) {
-      if (!slug) {
-        document.getElementById('board-name').textContent = '掲示板';
-        return;
-      }
-
       const { data, error } = await supabase
         .from('boards')
         .select('name')
         .eq('slug', slug)
         .single();
 
-      console.log("slug:", slug, "data:", data, "error:", error); // デバッグ用
+      console.log("取得結果:", { data, error });
 
-      if (error || !data) {
-        document.getElementById('board-name').textContent = '掲示板';
-      } else {
-        document.getElementById('board-name').textContent = data.name;
-      }
+      document.getElementById('board-name').textContent = data?.name || '掲示板';
     }
 
-    // スレッド一覧も読み込む（オプション）
-    async function fetchThreads(slug) {
-      if (!slug) return;
-      const { data, error } = await supabase
-        .from('threads')
-        .select('id, title')
-        .eq('board_slug', slug)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        const list = document.getElementById('thread-list');
-        list.innerHTML = '';
-        data.forEach(thread => {
-          const li = document.createElement('li');
-          li.innerHTML = `<a href="thread.html?thread_id=${thread.id}&board=${slug}">● ${thread.title}</a>`;
-          list.appendChild(li);
-        });
-      }
+    if (boardSlug) {
+      fetchBoardName(boardSlug);
     }
-
-    // 初期処理
-    const boardSlug = getBoardSlug();
-    fetchBoardName(boardSlug);
-    fetchThreads(boardSlug);
   </script>
 </body>
 </html>
